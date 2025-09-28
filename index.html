@@ -1,0 +1,13 @@
+<button onclick="playTone()">Play Tone</button>
+<script>
+async function playTone() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 15000; // ~15 kHz
+    osc.connect(ctx.destination);
+    osc.start();
+    await new Promise(r => setTimeout(r, 500));
+    osc.stop();
+    ctx.close();
+}
+</script>

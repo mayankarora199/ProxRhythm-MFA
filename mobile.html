@@ -1,0 +1,50 @@
+<input type="text" id="username" placeholder="Username">
+<button onclick="enroll()">Enroll</button>
+<button onclick="authenticate()">Authenticate</button>
+
+<script>
+let privateKey;
+
+async function enroll() {
+    privateKey = await window.crypto.subtle.generateKey(
+        {name:"ECDSA", namedCurve:"P-256"},
+        true, ["sign"]
+    );
+    const pubKey = await window.crypto.subtle.exportKey("spki", privateKey.publicKey);
+    const pubKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(pubKey)));
+
+    await fetch("http://<PC_IP>:5000/enroll", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            username: document.getElementById("username").value,
+            public_key_pem: `-----BEGIN PUBLIC KEY-----\n${pubKeyBase64}\n-----END PUBLIC KEY-----`
+        })
+    });
+    alert("Enrolled!");
+}
+
+async function authenticate() {
+    const res = await fetch("http://<PC_IP>:5000/challenge");
+    const data = await res.json();
+    const challenge = data.challenge;
+
+    const rhythm = [100, 250, 150]; // simulated tap intervals
+    const assertion = {challenge: challenge, proximity: true, rhythm: rhythm};
+
+    const msg = new TextEncoder().encode(JSON.stringify(assertion));
+    const signature = await window.crypto.subtle.sign({name:"ECDSA", hash:"SHA-256"}, privateKey, msg);
+
+    const result = await fetch("http://<PC_IP>:5000/verify", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            username: document.getElementById("username").value,
+            assertion: assertion,
+            signature: btoa(String.fromCharCode(...new Uint8Array(signature)))
+        })
+    }).then(r=>r.json());
+
+    alert(`Authentication ${result.status}`);
+}
+</script>

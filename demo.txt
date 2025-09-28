@@ -1,0 +1,9 @@
+Demo Flow
+
+Enroll user: On iPhone, type a username → click Enroll.
+
+Simulate proximity: On PC, click Play Tone.
+
+Authenticate: On iPhone, click Authenticate.
+
+Server should respond with "status": "success".
